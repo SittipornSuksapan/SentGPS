@@ -13,8 +13,20 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.squareup.okhttp.Call;
+import com.squareup.okhttp.Callback;
+import com.squareup.okhttp.FormEncodingBuilder;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
+
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -22,7 +34,10 @@ import java.util.Date;
 public class MainActivity extends AppCompatActivity {
 
     //Explicit
+
     private TextView latTextView, lngTextView;
+    private EditText plateEditText;
+
     private LocationManager locationManager;
     private Criteria criteria;
     private boolean GPSABoolean, networkABoolean;
@@ -43,6 +58,48 @@ public class MainActivity extends AppCompatActivity {
         autoUpdate();
 
     } //Main method
+
+    public void clickSaveData(View view) {
+
+        String strName = plateEditText.getText().toString().trim();
+        if (strName.equals("")) {
+            Toast.makeText(this,"กรุณาใส่ชื่อสถานที่",
+                    Toast.LENGTH_SHORT).show();
+
+        } else {
+            String strLat = latTextView.getText().toString();
+            String strLng = lngTextView.getText().toString();
+            updateValueToServer(strName, strLat, strLng);
+        }
+
+    } //clickSavedata
+
+    private void updateValueToServer(String strName, String strLat, String strLng) {
+
+        OkHttpClient okHttpClient = new OkHttpClient();
+        RequestBody requestBody = new FormEncodingBuilder()
+                .add("isAdd", "true")
+                .add("Name", strName)
+                .add("Lat", strLat)
+                .add("Lng", strLng)
+                .build();
+        Request.Builder builder = new Request.Builder();
+        Request request = builder.url("http://swiftcodingthai.com/watch/php_add_plate.php")
+                .post(requestBody).build();
+        Call call = okHttpClient.newCall(request);
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(Request request, IOException e) {
+
+            }
+
+            @Override
+            public void onResponse(Response response) throws IOException {
+                finish();
+            }
+        });
+
+    } //Update Value
 
     private void autoUpdate() {
         timeAnInt +=1;
@@ -169,5 +226,7 @@ public class MainActivity extends AppCompatActivity {
     private void bindWidget() {
         latTextView = (TextView) findViewById(R.id.textView3);
         lngTextView = (TextView) findViewById(R.id.textView5);
+
+        plateEditText = (EditText) findViewById(R.id.editText);
     }
 } //Main Class
