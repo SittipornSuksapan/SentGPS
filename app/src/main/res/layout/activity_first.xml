@@ -7,6 +7,33 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="mean.chan.mind.sendgps.FirstActivity">
+    tools:context="mean.chan.mind.sendgps.FirstActivity"
+    android:background="@drawable/bg8">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name"
+        android:id="@+id/textView6"
+        android:textSize="35sp"
+        android:layout_centerHorizontal="true"
+        android:textColor="@color/test" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ADD"
+        android:id="@+id/button"
+        android:layout_alignParentBottom="true"
+        android:textColor="@color/test"
+        android:onClick="clickAddPlate" />
+
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/listView"
+        android:layout_below="@+id/textView6"
+        android:layout_above="@+id/button"
+        android:layout_margin="15dp"
+        android:background="#b4ffffff" />
 </RelativeLayout>
