@@ -2,12 +2,14 @@ package mean.chan.mind.sendgps;
 
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
@@ -16,13 +18,14 @@ import com.squareup.okhttp.Response;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import mean.chan.mind.sendgps.MainActivity;
+import mean.chan.mind.sendgps.PlateAdepter;
+
 public class FirstActivity extends AppCompatActivity {
 
     //Explicit
     private ListView listView;
-
-
-
+    private String[] latStrings, lngStrings;
 
 
     @Override
@@ -32,27 +35,128 @@ public class FirstActivity extends AppCompatActivity {
 
         listView = (ListView) findViewById(R.id.listView);
 
-        //S
-        syncJSON();
+        //Synchronize JSON
+        synJSON();
+
+        //Loop Check User
+        loopCheckUser();
+
+    }   // Main Method
 
 
-    } //main mathod
+    //นี่คือ เมทอด ที่หาระยะ ระหว่างจุด
+    private static double distance(double lat1, double lon1, double lat2, double lon2) {
+        double theta = lon1 - lon2;
+        double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
+        dist = Math.acos(dist);
+        dist = rad2deg(dist);
+        dist = dist * 60 * 1.1515 * 1.609344;
+
+
+        return (dist);
+    }
+
+    private static double deg2rad(double deg) {
+        return (deg * Math.PI / 180.0);
+    }
+
+    private static double rad2deg(double rad) {
+        return (rad * 180 / Math.PI);
+    }
+
+    public class ConnectedLocalUser extends AsyncTask<Void, Void, String> {
+
+        @Override
+        protected String doInBackground(Void... voids) {
+
+            try {
+
+                OkHttpClient okHttpClient = new OkHttpClient();
+                Request.Builder builder = new Request.Builder();
+                Request request = builder.url("http://swiftcodingthai.com/watch/php_get_last.php").build();
+                Response response = okHttpClient.newCall(request).execute();
+                return response.body().string();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }   // doInBack
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            Log.d("22April", "JSON ==> " + s);
+
+            try {
+
+                JSONArray jsonArray = new JSONArray(s);
+                JSONObject jsonObject = jsonArray.getJSONObject(0);
+                String strLat = jsonObject.getString("Lat");
+                String strLng = jsonObject.getString("Lng");
+
+                for (int i=0;i<latStrings.length;i++) {
+
+                    double douLatPlate = Double.parseDouble(latStrings[i]);
+                    double douLngPlate = Double.parseDouble(lngStrings[i]);
+                    double douLatUser = Double.parseDouble(strLat);
+                    double douLngUser = Double.parseDouble(strLng);
+
+                    double currentDistance = distance(douLatPlate,
+                            douLngPlate, douLatUser, douLngUser);
+
+                    Log.d("23April", "current Dis ==> " + currentDistance);
+
+                    if (currentDistance <0.3) {
+                        myNotificatiom();
+                    }
+
+                }   // for
+
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }   // onPost
+
+    }   // Connected Class
+
+    private void myNotificatiom() {
+
+        Toast.makeText(this, "เข้าถึงแล้ว", Toast.LENGTH_SHORT).show();
+    }
+
+
+    private void loopCheckUser() {
+
+        ConnectedLocalUser connectedLocalUser = new ConnectedLocalUser();
+        connectedLocalUser.execute();
+
+        //Delay
+        Handler handler = new Handler();
+        int intTime = 5000; // หน่วงเป็นเวลา 5 วินาที
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                loopCheckUser();
+            }
+        }, intTime);
+
+    }   // loopCheckUser
 
     @Override
     protected void onRestart() {
         super.onRestart();
-        syncJSON();
+        synJSON();
     }
 
-    private void syncJSON() {
+    private void synJSON() {
         MySynJSON mySynJSON = new MySynJSON();
         mySynJSON.execute();
-
-
     }
 
-
-    //Create Inder Class
+    //Create Inner Class
     public class MySynJSON extends AsyncTask<Void, Void, String> {
 
         @Override
@@ -66,47 +170,49 @@ public class FirstActivity extends AppCompatActivity {
                 Response response = okHttpClient.newCall(request).execute();
                 return response.body().string();
 
-
-
-
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
             }
 
-
-        } //doInBack
+        }   // doInBack
 
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
 
-            Log.d("21April", "JSON ==>" + s);
+            Log.d("21April", "JSON ==> " + s);
 
             try {
 
                 JSONArray jsonArray = new JSONArray(s);
 
                 final String[] nameStrings = new String[jsonArray.length()];
-                final String[] latStrings = new String[jsonArray.length()];
-                final String[] lngStrings = new String[jsonArray.length()];
+                latStrings = new String[jsonArray.length()];
+                lngStrings = new String[jsonArray.length()];
 
-
-                for (int i = 0; i < jsonArray.length(); i++) {
+                for (int i=0;i<jsonArray.length();i++) {
 
                     JSONObject jsonObject = jsonArray.getJSONObject(i);
                     nameStrings[i] = jsonObject.getString("Name");
                     latStrings[i] = jsonObject.getString("Lat");
                     lngStrings[i] = jsonObject.getString("Lng");
 
-                }//for
-                PlateAdepter plateAdepter = new PlateAdepter(FirstActivity.this, nameStrings);
-                listView.setAdapter(plateAdepter);
+                    Log.d("21April", "Name ==> " + i + " == " + nameStrings[i]);
+
+                }   // for
+
+                Log.d("21April", "Name length ==> " + nameStrings.length);
+
+
+                PlateAdepter plateAdapter = new PlateAdepter(FirstActivity.this, nameStrings);
+                listView.setAdapter(plateAdapter);
 
                 listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                     @Override
                     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                        Intent intent = new Intent(FirstActivity.this, PlateMapsActivity.class);
+
+                        Intent intent = new Intent(FirstActivity.this, PlateAdepter.class);
 
                         intent.putExtra("Name", nameStrings[i]);
                         intent.putExtra("Lat", latStrings[i]);
@@ -114,7 +220,7 @@ public class FirstActivity extends AppCompatActivity {
 
                         startActivity(intent);
 
-                    }//onItem
+                    }   // onItem
                 });
 
 
@@ -122,12 +228,12 @@ public class FirstActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
+        }   // onPost
 
-        } //onPos
-    } //MySynJSON class
-
+    }   // MySynJSON class
 
     public void clickAddPlate(View view) {
         startActivity(new Intent(FirstActivity.this, MainActivity.class));
     }
-} //main class
+
+}   // Main Class
