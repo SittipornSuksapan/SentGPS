@@ -24,7 +24,7 @@ public class PlateMapsActivity extends FragmentActivity implements OnMapReadyCal
 
         //Receive From Inten
         nameString = getIntent().getStringExtra("Name");
-        latString = getIntent().getStringExtra("Lng");
+        latString = getIntent().getStringExtra("Lat");
         lngString = getIntent().getStringExtra("Lng");
 
         //Show View
@@ -53,9 +53,12 @@ public class PlateMapsActivity extends FragmentActivity implements OnMapReadyCal
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        //Create Lat Lng
+        double doLat = Double.parseDouble(latString);
+        double doLng = Double.parseDouble(lngString);
+        LatLng latLng = new LatLng(doLat, doLng);
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+
+
     } //onMap
 } // class Main
